@@ -6,6 +6,11 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as actions from 'aws-cdk-lib/aws-cloudwatch-actions';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
+import * as lambda_event_source from 'aws-cdk-lib/aws-lambda-event-sources';
+import * as cloudwatchActions from 'aws-cdk-lib/aws-cloudwatch-actions';
 
 interface CleanerLambdaStackProps extends cdk.StackProps {
   destinationBucketName: string;
@@ -15,6 +20,18 @@ export class CleanerLambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: CleanerLambdaStackProps) {
     super(scope, id, props);
 
+    // Create SNS topic
+    const cleanerTopic = new sns.Topic(this, 'CleanerTopic');
+    
+        // Create SQS queue
+    const cleanerQueue = new sqs.Queue(this, 'CleanerQueue', {
+      visibilityTimeout: cdk.Duration.seconds(50),
+    });
+    
+    
+    // Subscribe SQS queue to SNS topic
+    cleanerTopic.addSubscription(new subscriptions.SqsSubscription(cleanerQueue));
+    
     const cleanerLambda = new lambda.Function(this, 'CleanerLambda', {
       runtime: lambda.Runtime.PYTHON_3_8,
       handler: 'cleaner.lambda_handler',
@@ -24,6 +41,11 @@ export class CleanerLambdaStack extends cdk.Stack {
       }
     });
   
+    // set SQS queue as Lambda event source
+    cleanerLambda.addEventSource(new lambda_event_source.SqsEventSource(cleanerQueue, {
+        batchSize: 1  // 每次处理一个消息
+    }));
+    
     // Grant permissions to cleaner Lambda
     const destinationBucket = s3.Bucket.fromBucketName(this, 'DestinationBucket', props.destinationBucketName);
     destinationBucket.grantReadWrite(cleanerLambda);
@@ -50,6 +72,10 @@ export class CleanerLambdaStack extends cdk.Stack {
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD
     });
     
-    alarm.addAlarmAction(new actions.LambdaAction(cleanerLambda));
+    // alarm.addAlarmAction(new actions.LambdaAction(cleanerLambda));
+    // Add SNS action to the alarm
+    alarm.addAlarmAction(new cloudwatchActions.SnsAction(cleanerTopic));
+    
+    // alarm.addAlarmAction(new cloudwatch.actions.SnsAction(cleanerTopic));
   }
 }
