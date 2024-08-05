@@ -1,3 +1,5 @@
+<img width="1470" alt="image" src="https://github.com/user-attachments/assets/e4e190a1-6dfc-42dc-ba31-84d5edb3a08d">
+
 # Welcome to your CDK TypeScript project
 
 This is a blank project for CDK development with TypeScript.
