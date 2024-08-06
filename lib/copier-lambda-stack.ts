@@ -62,7 +62,7 @@ export class CopierLambdaStack extends cdk.Stack {
     
     // set SQS queue as Lambda event source
     copierLambda.addEventSource(new lambda_event_source.SqsEventSource(copierQueue, {
-        batchSize: 1  // 每次处理一个消息
+        batchSize: 1  // deal one message each time
     }));
     
     // Create log handler Lambda
@@ -79,7 +79,7 @@ export class CopierLambdaStack extends cdk.Stack {
     
     // set SQS queue as Lambda event source
     logLambda.addEventSource(new lambda_event_source.SqsEventSource(loggerQueue, {
-        batchSize: 1  // 每次处理一个消息
+        batchSize: 1  
     }));
     
     const policyStatementQueue = new iam.PolicyStatement({
