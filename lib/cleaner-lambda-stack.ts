@@ -43,7 +43,7 @@ export class CleanerLambdaStack extends cdk.Stack {
   
     // set SQS queue as Lambda event source
     cleanerLambda.addEventSource(new lambda_event_source.SqsEventSource(cleanerQueue, {
-        batchSize: 1  // 每次处理一个消息
+        batchSize: 1
     }));
     
     // Grant permissions to cleaner Lambda
