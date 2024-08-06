@@ -5,13 +5,12 @@ import json
 def log_lambda_handler(event, context):
     s3 = boto3.client('s3')
 
-    # 获取环境变量中的目标存储桶名
     dst_bucket = os.getenv('DESTINATION_BUCKET')
     if not dst_bucket:
         raise ValueError("DESTINATION_BUCKET environment variable is not set")
 
     for record in event['Records']:
-        # 解析 SQS 消息体
+        # load sqs message
         message = json.loads(record['body'])
         print(f"Received message: {message}")
 
